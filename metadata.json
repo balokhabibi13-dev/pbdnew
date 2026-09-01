@@ -1,0 +1,7 @@
+{
+  "name": "Rapor Pendidikan 2026 & PBD",
+  "description": "Sistem Informasi Rapor Pendidikan 2026, Perencanaan Berbasis Data (PBD), RKT, ARKAS, dan RKJM terintegrasi dengan antarmuka bergaya Dapodik Kemendikdasmen.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
