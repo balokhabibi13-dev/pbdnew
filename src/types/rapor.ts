@@ -114,6 +114,16 @@ export interface RKJMData {
   strategi4Tahunan: RKJMStrategyYear[];
 }
 
+export interface UserSession {
+  username: string;
+  name: string;
+  role: string;
+  email: string;
+  loginTime: string;
+  schoolName: string;
+  npsn: string;
+}
+
 export type ActiveTab = 
   | 'dashboard'
   | 'data-sekolah'

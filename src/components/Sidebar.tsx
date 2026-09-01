@@ -12,6 +12,7 @@ import {
   Milestone,
   HelpCircle,
   ChevronRight,
+  LogOut,
   X
 } from 'lucide-react';
 
@@ -28,6 +29,7 @@ interface SidebarProps {
   setIsCollapsed?: (collapsed: boolean) => void;
   isOpenMobile?: boolean;
   onCloseMobile?: () => void;
+  onLogout?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -40,6 +42,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   priorityCount = 6,
   isOpenMobile = false,
   onCloseMobile = () => {},
+  onLogout,
 }) => {
   const handleSelect = (id: ActiveTab) => {
     if (onSelectTab) onSelectTab(id);
@@ -224,6 +227,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </React.Fragment>
           );
         })}
+
+        {onLogout && (
+          <div className="pt-2 border-t border-slate-800/80 mt-2">
+            <button
+              id="sidebar-nav-logout"
+              onClick={onLogout}
+              className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left text-rose-400 hover:text-rose-200 hover:bg-rose-950/40 border border-transparent hover:border-rose-900/50 transition-all cursor-pointer group"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="p-1 rounded-md shrink-0 text-rose-400 group-hover:text-rose-300">
+                  <LogOut className="w-4 h-4" />
+                </div>
+                <span className="text-xs font-semibold truncate">
+                  Keluar (Logout)
+                </span>
+              </div>
+            </button>
+          </div>
+        )}
       </nav>
 
       {/* Footer Info / Versioning */}

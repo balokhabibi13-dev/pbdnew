@@ -10,7 +10,8 @@ import {
   RekomendasiItem, 
   RKTItem, 
   ARKASItem, 
-  RKJMData 
+  RKJMData,
+  UserSession 
 } from './types/rapor';
 import {
   defaultSchoolProfile,
@@ -22,6 +23,7 @@ import {
 } from './data/defaultData';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
+import { LoginView } from './components/views/LoginView';
 import { DashboardView } from './components/views/DashboardView';
 import { DataSekolahView } from './components/views/DataSekolahView';
 import { PanduanPBDView } from './components/views/PanduanPBDView';
@@ -38,6 +40,27 @@ import { AddEditRKTModal } from './components/modals/AddEditRKTModal';
 import { AddEditARKASModal } from './components/modals/AddEditARKASModal';
 
 export default function App() {
+  // Authentication State
+  const [userSession, setUserSession] = useState<UserSession | null>(() => {
+    const local = localStorage.getItem('rapor_auth_session');
+    if (local) {
+      try {
+        return JSON.parse(local);
+      } catch {
+        // invalid JSON
+      }
+    }
+    const session = sessionStorage.getItem('rapor_auth_session');
+    if (session) {
+      try {
+        return JSON.parse(session);
+      } catch {
+        // invalid JSON
+      }
+    }
+    return null;
+  });
+
   // Navigation State
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
@@ -45,7 +68,22 @@ export default function App() {
   // Application Data States (with LocalStorage Sync)
   const [schoolProfile, setSchoolProfile] = useState<SchoolProfile>(() => {
     const saved = localStorage.getItem('rapor_school_profile_2026');
-    return saved ? JSON.parse(saved) : defaultSchoolProfile;
+    if (!saved) return defaultSchoolProfile;
+    try {
+      const parsed = JSON.parse(saved);
+      // Migrate older template data if school name or NPSN differs from SDN SELOGUDIG WETAN II
+      if (
+        !parsed?.namaSekolah || 
+        parsed.namaSekolah.includes('TELADAN') || 
+        parsed.npsn === '10293847' ||
+        parsed.namaSekolah.includes('NUSANTARA')
+      ) {
+        return defaultSchoolProfile;
+      }
+      return parsed;
+    } catch {
+      return defaultSchoolProfile;
+    }
   });
 
   const [indicators, setIndicators] = useState<RaporIndicator[]>(() => {
@@ -116,16 +154,30 @@ export default function App() {
     localStorage.setItem('rapor_rkjm_data_2026', JSON.stringify(rkjmData));
   }, [rkjmData]);
 
+  // Handler for Logout
+  const handleLogout = () => {
+    if (window.confirm('Apakah Anda yakin ingin keluar dari akun operator SDN SELOGUDIG WETAN II?')) {
+      localStorage.removeItem('rapor_auth_session');
+      sessionStorage.removeItem('rapor_auth_session');
+      setUserSession(null);
+    }
+  };
+
   // Handler to Reset all data to defaults
   const handleResetData = () => {
-    if (window.confirm('Apakah Anda yakin ingin mengatur ulang data ke default contoh Rapor Pendidikan 2026? Semua perubahan manual akan direset.')) {
+    if (window.confirm('Apakah Anda yakin ingin mengatur ulang data ke default Rapor Pendidikan SDN SELOGUDIG WETAN II?')) {
       setSchoolProfile(defaultSchoolProfile);
       setIndicators(defaultIndicators);
       setRecommendations(defaultRecommendations);
       setRktItems(defaultRKTItems);
       setArkasItems(defaultARKASItems);
       setRkjmData(defaultRKJMData);
-      localStorage.clear();
+      localStorage.removeItem('rapor_school_profile_2026');
+      localStorage.removeItem('rapor_indicators_2026');
+      localStorage.removeItem('rapor_recommendations_2026');
+      localStorage.removeItem('rapor_rkt_items_2026');
+      localStorage.removeItem('rapor_arkas_items_2026');
+      localStorage.removeItem('rapor_rkjm_data_2026');
     }
   };
 
@@ -212,6 +264,16 @@ export default function App() {
   // Priority count calculation for badges
   const priorityCount = recommendations.filter(r => r.isPrioritasUtama).length;
 
+  // Render Login View if not authenticated
+  if (!userSession) {
+    return (
+      <LoginView
+        school={schoolProfile}
+        onLoginSuccess={(session) => setUserSession(session)}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col font-sans text-slate-900 selection:bg-blue-600 selection:text-white">
       {/* Top Application Header */}
@@ -221,9 +283,11 @@ export default function App() {
         npsn={schoolProfile.npsn}
         statusSekolah={schoolProfile.statusSekolah}
         activeTab={activeTab}
+        userSession={userSession}
         onOpenImport={() => setIsImportModalOpen(true)}
         onOpenPrint={() => setIsPrintModalOpen(true)}
         onResetData={handleResetData}
+        onLogout={handleLogout}
         onToggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
       />
 
@@ -239,6 +303,7 @@ export default function App() {
           rktCount={rktItems.length}
           arkasCount={arkasItems.length}
           priorityCount={priorityCount}
+          onLogout={handleLogout}
         />
 
         {/* Dynamic Main Workspace Content */}
